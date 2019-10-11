@@ -1,6 +1,8 @@
 import User from '../models/User';
 import File from '../models/File';
 
+import Cache from '../../lib/Cache';
+
 class UserController {
   async store(req, res) {
     const userExists = await User.findOne({ where: { email: req.body.email } });
@@ -10,6 +12,10 @@ class UserController {
     }
 
     const { id, name, email, provider } = await User.create(req.body);
+
+    if (provider) {
+      await Cache.invalidate('providers');
+    }
 
     return res.json({
       id,
@@ -21,10 +27,8 @@ class UserController {
 
   async update(req, res) {
     const { email, oldPassword } = req.body;
-    console.log(`userid: ${req.userId}`);
 
     const user = await User.findByPk(req.userId);
-    console.log(`user: ${user}`);
 
     if (email !== user.email) {
       const userExists = await User.findOne({ where: { email } });
